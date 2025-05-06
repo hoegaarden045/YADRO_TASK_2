@@ -35,13 +35,17 @@
 ```bash
     docker run --rm http_checker
 ```
-## Секция 3: Ansible-плейбук
-
-
+## Раздел 3: Ansible-плейбук
 
 #### Требования
 - Ansible 2.9+
 - Доступ к целевому хосту (по SSH для удаленного)
+- Пользователь `{{ user }}` имеет права sudo на целевом хосте
+- Пользователь `{{ user }}`ключен в файл `/etc/sudoers` или группу `sudo`
+- Для автоматического выполнения (без ввода пароля) добавьте в `/etc/sudoers`:
+    ```bash
+    {{ user }} ALL=(ALL) NOPASSWD: ALL
+    ```
 
 #### Установка
 Установка зависимостей:
@@ -52,7 +56,7 @@
 Подготовка inventory файла (опционально):
 ```ini
     [servers]
-    server1 ansible_host=192.168.1.10
+    server1 ansible_host=<ip адрес сервера>
 ```
 #### Использование
 ```bash
@@ -62,5 +66,4 @@ ansible-playbook playbook.yml -e "user=$(whoami)"
 # Для удаленного хоста
 ansible-playbook playbook.yml -i inventory.ini -e "target=server1 user=remote_user"
 ```
-
 

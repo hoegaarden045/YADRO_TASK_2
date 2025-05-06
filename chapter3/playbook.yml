@@ -9,39 +9,78 @@
     project_path: "/home/{{ user }}/project"
 
   tasks:
-    - name: Update apt packages
-      ansible.builtin.apt:
-        update_cache: true
+    - name: Setup Docker on debian
+      when: ansible_os_family == "Debian" 
+      block: 
+        - name: Update apt packages
+          ansible.builtin.apt:
+            update_cache: true
 
-    - name: Upgrade all packages
-      ansible.builtin.apt:
-        upgrade: safe
+        - name: Upgrade all packages
+          ansible.builtin.apt:
+            upgrade: safe
 
-    - name: Install required packages
-      ansible.builtin.apt:
-        name:
-          - apt-transport-https
-          - ca-certificates
-          - curl
-          - gnupg-agent
-          - software-properties-common
+        - name: Install required packages
+          ansible.builtin.apt:
+            name:
+              - apt-transport-https
+              - ca-certificates
+              - curl
+              - gnupg-agent
+              - software-properties-common
 
-    - name: Add GPG key
-      ansible.legacy.apt_key:
-        url: https://download.docker.com/linux/ubuntu/gpg
-        state: present
+        - name: Add GPG key
+          ansible.legacy.apt_key:
+            url: https://download.docker.com/linux/ubuntu/gpg
+            state: present
 
-    - name: Add docker repository to apt
-      ansible.builtin.apt_repository:
-        repo: deb https://download.docker.com/linux/ubuntu bionic stable
-        state: present
+        - name: Add docker repository to apt
+          ansible.builtin.apt_repository:
+            repo: deb https://download.docker.com/linux/ubuntu bionic stable
+            state: present
 
-    - name: Install docker
-      ansible.builtin.apt:
-        name:
-          - docker-ce
-          - docker-ce-cli
-          - containerd.io
+        - name: Install docker
+          ansible.builtin.apt:
+            name:
+              - docker-ce
+              - docker-ce-cli
+              - containerd.io
+
+    - name: Install Docker on CentOS
+      when: ansible_os_family == "RedHat"
+      block:
+        - name: Install required dependencies
+          ansible.builtin.dnf:
+            name:
+              - yum-utils
+              - device-mapper-persistent-data
+              - lvm2
+              - dnf-plugins-core
+            state: present
+
+        - name: Add Docker CE repository
+          ansible.builtin.get_url:
+            url: https://download.docker.com/linux/centos/docker-ce.repo
+            dest: /etc/yum.repos.d/docker-ce.repo
+            mode: "0644"
+            validate_certs: yes
+
+        - name: Enable Docker CE repository
+          ansible.builtin.ini_file:
+            path: /etc/yum.repos.d/docker-ce.repo
+            section: "docker-ce-stable"
+            option: enabled
+            value: "1"
+            backup: yes
+
+        - name: Install Docker packages
+          ansible.builtin.dnf:
+            name:
+              - docker-ce
+              - docker-ce-cli
+              - containerd.io
+            state: present
+            update_cache: yes 
 
     - name: Check docker is active
       ansible.legacy.service:
